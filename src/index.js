@@ -4,14 +4,13 @@ let weatherData = null;
 let structuredWeatherData = {};
 
 async function getData(place) {
-  if (weatherData) {
+  if (weatherData?.location === place) {
     return weatherData;
   }
   const data = await fetch(
     `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${place}?unitGroup=uk&key=Q5DNXR26ZTFQSQ6LL588W9GSQ`,
   );
   weatherData = await data.json();
-  console.log(weatherData);
   return weatherData;
 }
 
@@ -47,7 +46,7 @@ function getCurrentDayHour() {
   now = new Date();
   now = {
     day: `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`,
-    time: `${now.getHours()}:${now.getMinutes()}`,
+    time: `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`,
   };
 }
 
@@ -65,7 +64,9 @@ function setDom() {
   };
 }
 
+
 async function main(desiredLocation) {
+
   getCurrentDayHour();
   let target = {
     location: desiredLocation,
@@ -81,9 +82,8 @@ async function main(desiredLocation) {
     return;
   }
   const data = formatData(raw);
-  console.log(data);
+  console.log(data)
   let tempLabel = "°c";
-  console.log(target);
   const dom = setDom();
   function updateDom() {
     const formattedLocation = data.location
@@ -108,6 +108,70 @@ async function main(desiredLocation) {
   }
   updateDom();
   document.querySelector(".time").textContent = now.time;
+
+  const xSpacing = 83
+  let c = document.querySelector("canvas");
+  let ctx = c.getContext("2d");
+  c.width=c.offsetWidth;
+  c.height = c.offsetHeight;
+  ctx.clearRect(0,0, c.offsetWidth, c.offsetHeight);
+  ctx.font = "24px Arial";
+  ctx.fillText("°c", 0, 20)
+  ctx.moveTo(20, 25)
+  ctx.lineTo(25, 25);
+  ctx.lineTo(25, 273);
+  ctx.lineTo(690, 273)
+  ctx.moveTo(25,278)
+  ctx.lineTo(25,273)
+  ctx.lineTo(20,273)
+
+
+  ctx.font = "16px Arial"
+
+  for (let i = 0; i < 8; i++) {
+    ctx.moveTo(108+(i*xSpacing),278);
+    ctx.lineTo(108+(i*xSpacing),273);
+    ctx.fillText(`${String(3*i).padStart(2,"0")}:00`,5+(i*xSpacing), 293)
+  }
+
+  ctx.stroke()
+
+  const dayHours = data.days[target.date]
+  const minTemp = dayHours.reduce((min, hour) => {
+    return hour.temp < min ? hour.temp : min
+  }, Infinity)
+  const maxTemp = dayHours.reduce((max, hour) => {
+    return hour.temp > max ? hour.temp : max
+  }, -Infinity)
+
+  ctx.fillText(Math.floor(minTemp), 5, 273)
+  ctx.fillText(Math.ceil(maxTemp),5, 40)
+
+  const xMin = 25
+  const yMin = 278
+  const xMax = 689
+  const yMax = 25
+
+
+  const yCoords = []
+
+  data.days[target.date].forEach((hour, i) => {
+    let proportionOfMax = (hour.temp - Math.floor(minTemp))/(Math.ceil(maxTemp)-Math.floor(minTemp))
+    let yCoord = ((1-proportionOfMax)*(278-25))+25
+    yCoords.push(yCoord)
+  })
+
+  ctx.moveTo(xMin,yCoords[0])
+
+  ctx.font = "8px Arial"
+
+  yCoords.forEach((y, i) => {
+    ctx.lineTo((((xMax-xMin)/24)*i)+xMin,y)
+    ctx.fillText(dayHours[i].temp,(((xMax-xMin)/24)*i)+(xMin*0.8),y-15)
+  })
+
+  ctx.stroke()
 }
 
-main("stoke-on-trent");
+
+main("london")

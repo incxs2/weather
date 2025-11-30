@@ -133,7 +133,14 @@ body {
   height: 300px;
   border: 1px solid black;
   margin-left: auto;
-  border-bottom-right-radius: 40px;
+  border-bottom-right-radius: 20px;
   corner-bottom-right-shape: bevel;
   position:relative;
+}
+
+.weather {
+  white-space: nowrap;
+  width: 360px;
+  overflow:hidden;
+  line-height: 1em;
 }
